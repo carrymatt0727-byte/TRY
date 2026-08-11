@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>開庭進度與日程查詢系統 - 臺灣臺南地方檢察署 (RP專用)</title>
+    <style>
+        :root {
+            --primary-blue: #004488;
+            --secondary-blue: #005b9f;
+            --accent-gold: #f39c12;
+            --bg-light: #f4f6f9;
+            --border-color: #dcdcdc;
+        }
+
+        body {
+            font-family: '微軟正黑體', 'Noto Sans TC', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-light);
+            color: #333;
+        }
+
+        a { text-decoration: none; color: inherit; }
+
+        /* 頁首 */
+        header {
+            background-color: var(--primary-blue);
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .logo-area { display: flex; align-items: center; gap: 15px; }
+        .logo-area img { width: 45px; height: 45px; object-fit: contain; }
+        .title-area h1 { margin: 0; font-size: 20px; font-weight: bold; }
+        .title-area p { margin: 3px 0 0 0; font-size: 12px; opacity: 0.8; }
+
+        .admin-btn {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+            padding: 7px 15px;
+            border-radius: 4px;
+            font-size: 13px;
+            cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.4);
+            transition: 0.2s;
+        }
+        .admin-btn:hover { background: rgba(255, 255, 255, 0.3); }
+
+        /* 容器與導覽 */
+        .container {
+            max-width: 1100px;
+            margin: 25px auto;
+            padding: 0 20px;
+        }
+
+        .breadcrumb {
+            font-size: 14px;
+            margin-bottom: 20px;
+            color: #666;
+        }
+        .breadcrumb a { color: var(--primary-blue); font-weight: bold; }
+
+        /* 查詢卡片 */
+        .card {
+            background: white;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--primary-blue);
+            border-bottom: 2px solid var(--primary-blue);
+            padding-bottom: 10px;
+            margin-top: 0;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* 查詢表單格線 */
+        .search-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .form-group { display: flex; flex-direction: column; }
+        .form-group label { font-size: 14px; font-weight: bold; margin-bottom: 6px; color: #444; }
+        .form-group input, .form-group select {
+            padding: 9px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            outline: none;
+        }
+        .form-group input:focus, .form-group select:focus {
+            border-color: var(--primary-blue);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            padding: 9px 22px;
+            border-radius: 4px;
+            border: none;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-primary { background-color: var(--primary-blue); color: white; }
+        .btn-primary:hover { background-color: var(--secondary-blue); }
+        .btn-reset { background-color: #6c757d; color: white; }
+        .btn-reset:hover { background-color: #5a6268; }
+
+        /* 結果表格 */
+        .table-responsive { overflow-x: auto; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            text-align: left;
+        }
+        th {
+            background-color: #f0f4f8;
+            color: var(--primary-blue);
+            padding: 12px;
+            border-bottom: 2px solid var(--border-color);
+            white-space: nowrap;
+        }
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            vertical-align: middle;
+        }
+        tr:hover { background-color: #f9fbfd; }
+
+        /* 狀態標籤 */
+        .badge {
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        .badge-waiting { background-color: #e3f2fd; color: #0d47a1; } /* 等候訊問 */
+        .badge-active { background-color: #fff3cd; color: #856404; animation: pulse 1.5s infinite; } /* 訊問中 */
+        .badge-done { background-color: #e2e3e5; color: #383d41; } /* 訊問完畢 */
+        .badge-cancelled { background-color: #f8d7da; color: #721c24; } /* 停開/改期 */
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+
+        .del-btn {
+            background: #dc3545; color: white; border: none; padding: 3px 8px; border-radius: 3px; cursor: pointer; font-size: 12px;
+        }
+
+        /* Modal 控制頁面 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 6px;
+            width: 500px;
+            max-width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        footer {
+            background: #333; color: #aaa;
+            padding: 20px; text-align: center;
+            font-size: 12px; margin-top: 40px; line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo-area">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/ROC_Ministry_of_Justice_Seal.svg/1024px-ROC_Ministry_of_Justice_Seal.svg.png" alt="徽章">
+        <div class="title-area">
+            <h1>開庭進度與日程查詢系統</h1>
+            <p>Taiwan Tainan District Prosecutors Office - Hearing Schedule System (RP)</p>
+        </div>
+    </div>
+    <button class="admin-btn" id="admin-login-btn" onclick="openAdminModal()">管理者後台</button>
+</header>
+
+<div class="container">
+    <div class="breadcrumb">
+        首頁 / 為民服務專區 / <strong>開庭進度與日程查詢</strong>
+    </div>
+
+    <!-- 查詢卡片 -->
+    <div class="card">
+        <h2 class="card-title">案件庭期查詢條件</h2>
+        <form id="search-form" onsubmit="event.preventDefault(); filterSchedule();">
+            <div class="search-grid">
+                <div class="form-group">
+                    <label>案件字號 / 案號：</label>
+                    <input type="text" id="search-case-no" placeholder="例如：115偵字第1024號">
+                </div>
+                <div class="form-group">
+                    <label>當事人 / 關係人姓名：</label>
+                    <input type="text" id="search-name" placeholder="請輸入姓名或暱稱">
+                </div>
+                <div class="form-group">
+                    <label>開庭日期：</label>
+                    <input type="date" id="search-date">
+                </div>
+                <div class="form-group">
+                    <label>開庭地點 / 偵查庭：</label>
+                    <select id="search-location">
+                        <option value="">-- 全部偵查庭 --</option>
+                        <option value="第一偵查庭">第一偵查庭</option>
+                        <option value="第二偵查庭">第二偵查庭</option>
+                        <option value="第三偵查庭">第三偵查庭</option>
+                        <option value="臨時偵訊室">臨時偵訊室</option>
+                    </select>
+                </div>
+            </div>
+            <div class="btn-group">
+                <button type="button" class="btn btn-reset" onclick="resetSearch()">重置查詢</button>
+                <button type="submit" class="btn btn-primary">開始查詢</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- 查詢結果列表 -->
+    <div class="card">
+        <h2 class="card-title">
+            今日與預定開庭日程清單
+            <button class="admin-only-btn btn btn-primary" style="display:none; font-size:12px; padding:5px 12px;" onclick="openAddModal()">＋ 新增庭期排程</button>
+        </h2>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>案號</th>
+                        <th>案由</th>
+                        <th>當事人 (RP)</th>
+                        <th>開庭時間</th>
+                        <th>偵查庭</th>
+                        <th>承辦股別</th>
+                        <th>目前狀態</th>
+                        <th class="admin-only-col" style="display:none;">管理操作</th>
+                    </tr>
+                </thead>
+                <tbody id="schedule-tbody">
+                    <!-- 動態渲染資料 -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 後台管理登入 Modal -->
+<div class="modal" id="admin-modal">
+    <div class="modal-content">
+        <h2 id="modal-title" style="color:var(--primary-blue); margin-top:0;">管理者登入</h2>
+        <div id="login-section">
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>請輸入管理密碼：</label>
+                <input type="password" id="admin-pwd" placeholder="預設密碼：admin123">
+            </div>
+            <div style="text-align:right;">
+                <button class="btn btn-reset" onclick="closeAdminModal()">取消</button>
+                <button class="btn btn-primary" onclick="loginAdmin()">登入</button>
+            </div>
+        </div>
+        <div id="control-section" style="display:none;">
+            <p style="color:green; font-weight:bold;">已進入開庭日程管理模式！</p>
+            <p style="font-size:13px; color:#666;">您現在可以直接在列表上方點擊「新增庭期排程」或直接刪除特定庭期。</p>
+            <hr style="border:0; border-top:1px solid #ddd; margin:15px 0;">
+            <button class="btn" style="background:#d9381e; color:white;" onclick="resetDefaultData()">恢復預設模擬庭期</button>
+            <div style="text-align:right; margin-top:15px;">
+                <button class="btn btn-reset" onclick="logoutAdmin()">登出</button>
+                <button class="btn btn-primary" onclick="closeAdminModal()">關閉視窗</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 新增庭期 Modal -->
+<div class="modal" id="add-modal">
+    <div class="modal-content">
+        <h2 style="color:var(--primary-blue); margin-top:0;">新增開庭排程</h2>
+        <form id="add-schedule-form" onsubmit="event.preventDefault(); saveNewSchedule();">
+            <div class="form-group" style="margin-bottom:10px;">
+                <label>案號：</label>
+                <input type="text" id="add-case-no" required placeholder="例如：115年度偵字第1024號">
+            </div>
+            <div class="form-group" style="margin-bottom:10px;">
+                <label>案由 / 罪名：</label>
+                <input type="text" id="add-cause" required placeholder="例如：加重妨害公務罪、公務車輛竊盜">
+            </div>
+            <div class="form-group" style="margin-bottom:10px;">
+                <label>當事人姓名 (RP暱稱)：</label>
+                <input type="text" id="add-party" required placeholder="例如：張小明">
+            </div>
+            <div class="form-group" style="margin-bottom:10px;">
+                <label>開庭日期與時間：</label>
+                <input type="datetime-local" id="add-datetime" required>
+            </div>
+            <div class="form-group" style="margin-bottom:10px;">
+                <label>地點 / 偵查庭：</label>
+                <select id="add-location">
+                    <option value="第一偵查庭">第一偵查庭</option>
+                    <option value="第二偵查庭">第二偵查庭</option>
+                    <option value="第三偵查庭">第三偵查庭</option>
+                    <option value="臨時偵訊室">臨時偵訊室</option>
+                </select>
+            </div>
+            <div class="form-group" style="margin-bottom:10px;">
+                <label>承辦股別：</label>
+                <input type="text" id="add-division" placeholder="例如：廉股、正股">
+            </div>
+            <div class="form-group" style="margin-bottom:15px;">
+                <label>開庭狀態：</label>
+                <select id="add-status">
+                    <option value="waiting">等候訊問</option>
+                    <option value="active">訊問中</option>
+                    <option value="done">訊問完畢</option>
+                    <option value="cancelled">停開/改期</option>
+                </select>
+            </div>
+            <div style="text-align:right;">
+                <button type="button" class="btn btn-reset" onclick="closeAddModal()">取消</button>
+                <button type="submit" class="btn btn-primary">確認發布</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<footer>
+    <p>臺灣臺南地方檢察署開庭進度查詢系統 (遊戲RP模擬專用)<br>
+    本系統所列案號、姓名及庭期均為虛擬 Roleplay 遊戲內容，與真實司法機關無涉。</p>
+</footer>
+
+<script>
+    // 預設模擬開庭資料
+    const defaultSchedules = [
+        {
+            caseNo: "115年度偵字第1024號",
+            cause: "加重妨害公務罪",
+            party: "王大明",
+            datetime: "2026-08-12T09:30",
+            location: "第一偵查庭",
+            division: "廉股",
+            status: "done"
+        },
+        {
+            caseNo: "115年度偵字第0912號",
+            cause: "公務車輛竊盜案",
+            party: "李阿豪",
+            datetime: "2026-08-12T10:30",
+            location: "第二偵查庭",
+            division: "正股",
+            status: "active"
+        },
+        {
+            caseNo: "115年度重偵字第0123號",
+            cause: "組織犯罪防制條例",
+            party: "陳老大",
+            datetime: "2026-08-12T14:00",
+            location: "第一偵查庭",
+            division: "忠股",
+            status: "waiting"
+        },
+        {
+            caseNo: "115年度偵字第1150號",
+            cause: "公共危險罪",
+            party: "林阿輝",
+            datetime: "2026-08-13T10:00",
+            location: "第三偵查庭",
+            division: "義股",
+            status: "waiting"
+        }
+    ];
+
+    let isAdmin = false;
+
+    window.onload = function() {
+        renderScheduleTable(getSchedules());
+    };
+
+    function getSchedules() {
+        return JSON.parse(localStorage.getItem('rp_court_schedules')) || defaultSchedules;
+    }
+
+    function saveSchedules(data) {
+        localStorage.setItem('rp_court_schedules', JSON.stringify(data));
+    }
+
+    // 渲染表格
+    function renderScheduleTable(data) {
+        const tbody = document.getElementById('schedule-tbody');
+        if (data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#888; padding:20px;">查無符合條件之開庭排程記錄。</td></tr>`;
+            return;
+        }
+
+        const statusMap = {
+            'waiting': '<span class="badge badge-waiting">等候訊問</span>',
+            'active': '<span class="badge badge-active">訊問中</span>',
+            'done': '<span class="badge badge-done">訊問完畢</span>',
+            'cancelled': '<span class="badge badge-cancelled">停開/改期</span>'
+        };
+
+        tbody.innerHTML = data.map((item, index) => {
+            const formattedTime = item.datetime.replace('T', ' ');
+            return `
+                <tr>
+                    <td><strong>${item.caseNo}</strong></td>
+                    <td>${item.cause}</td>
+                    <td>${item.party}</td>
+                    <td>${formattedTime}</td>
+                    <td>${item.location}</td>
+                    <td>${item.division || '未分配'}</td>
+                    <td>${statusMap[item.status] || item.status}</td>
+                    <td class="admin-only-col" style="display:${isAdmin ? 'table-cell' : 'none'}">
+                        <button class="del-btn" onclick="deleteSchedule(${index})">刪除</button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        // 控制後台欄位顯示
+        document.querySelectorAll('.admin-only-col').forEach(col => col.style.display = isAdmin ? 'table-cell' : 'none');
+        document.querySelectorAll('.admin-only-btn').forEach(btn => btn.style.display = isAdmin ? 'inline-block' : 'none');
+    }
+
+    // 篩選查詢邏輯
+    function filterSchedule() {
+        const caseNo = document.getElementById('search-case-no').value.toLowerCase().trim();
+        const name = document.getElementById('search-name').value.toLowerCase().trim();
+        const date = document.getElementById('search-date').value;
+        const location = document.getElementById('search-location').value;
+
+        const allData = getSchedules();
+
+        const filtered = allData.filter(item => {
+            const matchCase = !caseNo || item.caseNo.toLowerCase().includes(caseNo);
+            const matchName = !name || item.party.toLowerCase().includes(name);
+            const matchDate = !date || item.datetime.startsWith(date);
+            const matchLocation = !location || item.location === location;
+
+            return matchCase && matchName && matchDate && matchLocation;
+        });
+
+        renderScheduleTable(filtered);
+    }
+
+    function resetSearch() {
+        document.getElementById('search-form').reset();
+        renderScheduleTable(getSchedules());
+    }
+
+    /* --- 後台管理邏輯 --- */
+    function openAdminModal() { document.getElementById('admin-modal').style.display = 'flex'; }
+    function closeAdminModal() { document.getElementById('admin-modal').style.display = 'none'; }
+
+    function loginAdmin() {
+        const pwd = document.getElementById('admin-pwd').value;
+        if (pwd === 'admin123') {
+            isAdmin = true;
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('control-section').style.display = 'block';
+            document.getElementById('modal-title').innerText = '排程系統管理後台';
+            document.getElementById('admin-login-btn').innerText = '已登入管理模式';
+            renderScheduleTable(getSchedules());
+        } else {
+            alert('密碼錯誤！(預設密碼：admin123)');
+        }
+    }
+
+    function logoutAdmin() {
+        isAdmin = false;
+        document.getElementById('login-section').style.display = 'block';
+        document.getElementById('control-section').style.display = 'none';
+        document.getElementById('modal-title').innerText = '管理者登入';
+        document.getElementById('admin-login-btn').innerText = '管理者後台';
+        document.getElementById('admin-pwd').value = '';
+        renderScheduleTable(getSchedules());
+        closeAdminModal();
+    }
+
+    /* --- 新增與刪除功能 --- */
+    function openAddModal() { document.getElementById('add-modal').style.display = 'flex'; }
+    function closeAddModal() { document.getElementById('add-modal').style.display = 'none'; }
+
+    function saveNewSchedule() {
+        const newSchedule = {
+            caseNo: document.getElementById('add-case-no').value.trim(),
+            cause: document.getElementById('add-cause').value.trim(),
+            party: document.getElementById('add-party').value.trim(),
+            datetime: document.getElementById('add-datetime').value,
+            location: document.getElementById('add-location').value,
+            division: document.getElementById('add-division').value.trim(),
+            status: document.getElementById('add-status').value
+        };
+
+        const list = getSchedules();
+        list.unshift(newSchedule);
+        saveSchedules(list);
+
+        renderScheduleTable(list);
+        closeAddModal();
+        document.getElementById('add-schedule-form').reset();
+    }
+
+    function deleteSchedule(index) {
+        if (confirm('確定要刪除這筆開庭排程嗎？')) {
+            const list = getSchedules();
+            list.splice(index, 1);
+            saveSchedules(list);
+            renderScheduleTable(list);
+        }
+    }
+
+    function resetDefaultData() {
+        if (confirm('確定要重置為預設的模擬開庭資料嗎？')) {
+            localStorage.removeItem('rp_court_schedules');
+            renderScheduleTable(defaultSchedules);
+            alert('已恢復預設資料！');
+        }
+    }
+</script>
+
+</body>
+</html>
