@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>臺灣臺南地方檢察署全球資訊網 (遊戲Roleplay專用版)</title>
+    <style>
+        :root {
+            --primary-blue: #004488;
+            --secondary-blue: #005b9f;
+            --accent-red: #d9381e;
+            --bg-light: #f5f5f5;
+            --border-color: #ccc;
+        }
+        body { font-family: '微軟正黑體', 'Noto Sans TC', sans-serif; margin: 0; padding: 0; background-color: var(--bg-light); color: #333; transition: font-size 0.2s; }
+        a { text-decoration: none; color: inherit; }
+
+        /* 頁首 */
+        header { background-color: #e6f0fa; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--primary-blue); }
+        .logo-area { display: flex; align-items: center; gap: 15px; }
+        .logo-area img { width: 55px; height: 55px; object-fit: contain; }
+        .title-area h1 { margin: 0; font-size: 22px; color: #111; }
+        .title-area p { margin: 2px 0 0 0; font-size: 12px; color: #555; }
+        
+        .header-tools { display: flex; align-items: center; gap: 15px; }
+        .font-sizer span { background: #ddd; padding: 2px 6px; cursor: pointer; font-size: 12px; border-radius: 3px; font-weight: bold; }
+        .font-sizer span:hover { background: #bbb; }
+        .admin-btn { background: #333; color: #fff; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; border: none; }
+        .admin-btn:hover { background: #555; }
+
+        /* 導覽列群組 */
+        .main-nav { background-color: var(--primary-blue); display: flex; flex-wrap: wrap; }
+        .main-nav a { color: white; padding: 12px 18px; font-size: 15px; font-weight: bold; border-right: 1px solid rgba(255,255,255,0.2); transition: background 0.2s; }
+        .main-nav a:hover { background-color: var(--secondary-blue); }
+
+        .sub-nav { background-color: #666; display: flex; overflow-x: auto; font-size: 14px; }
+        .sub-nav a { color: white; padding: 10px 18px; border-right: 1px solid #777; white-space: nowrap; }
+        .sub-nav a:hover { background-color: #555; }
+
+        /* 跑馬燈宣導 */
+        .marquee-container { background: #fff3cd; color: #856404; padding: 8px 20px; font-size: 14px; font-weight: bold; display: flex; align-items: center; border-bottom: 1px solid #ffeeba; }
+        .marquee-badge { background: #dc3545; color: white; padding: 2px 8px; border-radius: 4px; margin-right: 10px; font-size: 12px; }
+
+        /* 版面配置 */
+        .container { max-width: 1200px; margin: 20px auto; display: flex; gap: 20px; padding: 0 15px; box-sizing: border-box; }
+        
+        /* 左側邊欄 */
+        .sidebar { width: 260px; flex-shrink: 0; }
+        .sidebar-box { background: white; border: 1px solid var(--border-color); margin-bottom: 20px; border-radius: 4px; overflow: hidden; }
+        .sidebar-box h3 { background: var(--secondary-blue); color: white; margin: 0; padding: 12px 15px; font-size: 15px; }
+        .sidebar-box ul { list-style: none; padding: 0; margin: 0; }
+        .sidebar-box ul li { border-bottom: 1px solid #eee; }
+        .sidebar-box ul li a { display: block; padding: 10px 15px; font-size: 14px; transition: 0.2s; }
+        .sidebar-box ul li a:hover { background: #f0f8ff; color: var(--primary-blue); padding-left: 18px; }
+
+        /* 中央主內容 */
+        .main-content { flex-grow: 1; display: flex; flex-direction: column; gap: 20px; }
+
+        /* 輪播橫幅系統 (Carousel Banner) */
+        .banner-carousel-container {
+            position: relative;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            padding: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .carousel-slide {
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .carousel-slide.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 樣式一：機關焦點主題橫幅 */
+        .banner-hero {
+            background: linear-gradient(135deg, #003366 0%, #005b9f 100%);
+            color: white;
+            border-radius: 6px;
+            padding: 30px 25px;
+        }
+        .hero-badge {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            font-size: 11px; padding: 3px 10px; border-radius: 20px; letter-spacing: 1px;
+        }
+        .hero-title { font-size: 22px; margin: 12px 0 8px 0; font-weight: bold; }
+        .hero-desc { font-size: 13.5px; opacity: 0.9; margin-bottom: 18px; line-height: 1.6; }
+        .hero-buttons { display: flex; gap: 10px; }
+        .hero-btn { padding: 8px 18px; border-radius: 4px; font-size: 13px; font-weight: bold; transition: 0.2s; }
+        .hero-btn.primary { background-color: #f39c12; color: #fff; }
+        .hero-btn.primary:hover { background-color: #d68207; }
+        .hero-btn.secondary { background-color: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.3); }
+
+        /* 樣式二：法規宣導警示橫幅 */
+        .banner-alert {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%);
+            border-left: 5px solid #d9381e;
+            border-radius: 6px;
+            padding: 25px 22px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            min-height: 120px;
+            box-sizing: border-box;
+        }
+        .banner-alert-tag {
+            background-color: #d9381e; color: white; font-size: 13px; font-weight: bold;
+            padding: 6px 12px; border-radius: 4px; white-space: nowrap;
+        }
+        .banner-alert-content { flex-grow: 1; }
+        .banner-alert-content h3 { margin: 0 0 5px 0; font-size: 16px; color: #856404; }
+        .banner-alert-content p { margin: 0; font-size: 13.5px; color: #533f03; line-height: 1.5; }
+        .banner-alert-btn {
+            background-color: #856404; color: white; padding: 8px 16px; border-radius: 4px;
+            font-size: 13px; font-weight: bold; white-space: nowrap; transition: 0.2s;
+        }
+        .banner-alert-btn:hover { background-color: #533f03; }
+
+        /* 樣式三：三欄式快捷服務橫幅 */
+        .banner-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+        .grid-card {
+            background: #fafafa;
+            border-radius: 6px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            display: flex; flex-direction: column; justify-content: space-between;
+        }
+        .card-subtitle { font-size: 10px; font-weight: bold; letter-spacing: 1px; color: #888; }
+        .card-title { font-size: 16px; margin: 4px 0; color: #222; }
+        .card-desc { font-size: 12px; color: #666; margin-bottom: 10px; line-height: 1.4; }
+        .card-btn { font-size: 12px; font-weight: bold; text-align: right; }
+        .card-blue { border-top: 3px solid #004488; } .card-blue .card-btn { color: #004488; }
+        .card-green { border-top: 3px solid #28a745; } .card-green .card-btn { color: #28a745; }
+        .card-red { border-top: 3px solid #d9381e; } .card-red .card-btn { color: #d9381e; }
+
+        /* 控制指示點 (Dots) */
+        .carousel-dots {
+            text-align: center;
+            margin-top: 10px;
+        }
+        .dot {
+            cursor: pointer;
+            height: 8px; width: 8px;
+            margin: 0 4px;
+            background-color: #ccc;
+            border-radius: 50%;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+        .dot.active, .dot:hover {
+            background-color: var(--primary-blue);
+            width: 22px;
+            border-radius: 4px;
+        }
+
+        /* 檢察長信箱按鈕區塊 */
+        .mailbox-banner { background: white; padding: 25px; border: 1px solid var(--border-color); text-align: center; border-radius: 4px; }
+        .mailbox-btn { 
+            background-color: var(--accent-red); color: white; border: none; padding: 14px 28px; 
+            font-size: 18px; font-weight: bold; border-radius: 4px; cursor: pointer; 
+            box-shadow: 0 3px 5px rgba(0,0,0,0.15); transition: background 0.3s;
+            display: inline-block; width: 85%; max-width: 480px;
+        }
+        .mailbox-btn:hover { background-color: #b52b15; }
+        .mailbox-btn span { display: block; font-size: 12px; font-weight: normal; margin-top: 4px; opacity: 0.9; }
+        .mailbox-desc { margin-top: 10px; font-size: 13px; color: #555; }
+
+        /* 表單樣式 */
+        #mailbox-form { display: none; margin-top: 20px; text-align: left; background: #f9f9f9; padding: 20px; border: 1px solid #ccc; border-radius: 4px; }
+        #mailbox-form label { display: block; margin-bottom: 5px; font-weight: bold; color: var(--primary-blue); font-size: 14px; }
+        #mailbox-form input, #mailbox-form textarea { width: 100%; padding: 8px; margin-bottom: 12px; border: 1px solid #ccc; box-sizing: border-box; border-radius: 3px; font-family: inherit; }
+        #mailbox-form button[type="submit"] { background: var(--primary-blue); color: white; border: none; padding: 10px 20px; cursor: pointer; font-size: 15px; border-radius: 3px; font-weight: bold; }
+
+        /* 公告列表區塊 */
+        .section-box { background: white; border: 1px solid var(--border-color); border-radius: 4px; overflow: hidden; }
+        .section-header { background: #e0e0e0; margin: 0; padding: 10px 15px; font-size: 15px; border-bottom: 2px solid var(--primary-blue); display: flex; justify-content: space-between; align-items: center; font-weight: bold; color: #222; }
+        .news-list { list-style: none; padding: 0; margin: 0; }
+        .news-list li { padding: 12px 15px; border-bottom: 1px dashed #ddd; font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
+        .news-list li:last-child { border-bottom: none; }
+        .news-item-text::before { content: '• '; color: var(--primary-blue); font-weight: bold; }
+        .del-btn { color: #d9381e; cursor: pointer; font-size: 12px; margin-left: 10px; display: none; background: #ffeeee; padding: 2px 6px; border-radius: 3px; }
+
+        /* 後台 Modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; padding: 25px; border-radius: 6px; width: 480px; max-width: 90%; max-height: 85vh; overflow-y: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .modal-content h2 { margin-top: 0; color: var(--primary-blue); border-bottom: 2px solid var(--primary-blue); padding-bottom: 8px; font-size: 18px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px; }
+        .form-group input, .form-group textarea { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 3px; }
+        .modal-actions { text-align: right; margin-top: 15px; }
+        .modal-actions button { padding: 8px 15px; margin-left: 8px; cursor: pointer; border-radius: 3px; border: 1px solid #ccc; font-weight: bold; }
+
+        /* 頁尾 */
+        footer { background: #333; color: #aaa; padding: 30px 20px; text-align: center; margin-top: 40px; font-size: 13px; line-height: 1.8; }
+        
+        @media(max-width: 768px) {
+            .container { flex-direction: column; }
+            .sidebar { width: 100%; }
+            .banner-alert { flex-direction: column; align-items: flex-start; }
+            .banner-alert-btn { align-self: flex-end; }
+        }
+    </style>
+</head>
+<body id="body-layout">
+
+<header>
+    <div class="logo-area">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/ROC_Ministry_of_Justice_Seal.svg/1024px-ROC_Ministry_of_Justice_Seal.svg.png" alt="法務部徽章">
+        <div class="title-area">
+            <h1>臺灣臺南地方檢察署全球資訊網</h1>
+            <p>Taiwan Tainan District Prosecutors Office (遊戲 Roleplay 專用模擬網)</p>
+        </div>
+    </div>
+    <div class="header-tools">
+        <div class="font-sizer">
+            字體大小：
+            <span onclick="changeFontSize('small')">A-</span>
+            <span onclick="changeFontSize('normal')">A</span>
+            <span onclick="changeFontSize('large')">A+</span>
+        </div>
+        <button class="admin-btn" onclick="openAdminModal()">管理者登入</button>
+    </div>
+</header>
+
+<nav class="main-nav">
+    <a href="#">首頁</a>
+    <a href="#">機關簡介</a>
+    <a href="#">為民服務專區</a>
+    <a href="#">政府資訊公開園地</a>
+    <a href="#">影音專區</a>
+    <a href="#">法規一點通</a>
+    <a href="#">English</a>
+</nav>
+
+<nav class="sub-nav">
+    <a href="#">最新消息</a>
+    <a href="#">新聞發佈區</a>
+    <a href="#">偵查終結公告</a>
+    <a href="#">業務與來文宣導</a>
+    <a href="#">查扣物拍賣區</a>
+    <a href="#">刑事保證金發還公告</a>
+    <a href="#">贓款發還公告專區</a>
+</nav>
+
+<div class="marquee-container">
+    <span class="marquee-badge">防詐反毒宣導</span>
+    <marquee scrollamount="5">
+        反詐騙專線165提醒您：持球棒等武器攻擊執法人員，本署一律嚴辦「加重妨害公務罪」！ │ 留意公務車輛遭竊與一般車輛竊盜之法律適用差異。 │ 拒絕毒品，青春最嗨，戒毒成功專線 0800-770-885。
+    </marquee>
+</div>
+
+<div class="container">
+    <!-- 左側邊欄 -->
+    <aside class="sidebar">
+        <div class="sidebar-box">
+            <h3>便民查詢熱點</h3>
+            <ul>
+                <li><a href="#mailbox">檢察長信箱申辦流程</a></li>
+                <li><a href="schedule.html" target="_blank">開庭進度查詢系統 (RP)</a></li>
+                <li><a href="#">法律諮詢線上預約</a></li>
+                <li><a href="#">易服社會勞動專區</a></li>
+                <li><a href="#">緩起訴處分金暨認罪協商金</a></li>
+                <li><a href="#">反賄選與檢舉資訊專區</a></li>
+                <li><a href="#">司法保護服務平台</a></li>
+            </ul>
+        </div>
+        <div class="sidebar-box">
+            <h3>快速導覽</h3>
+            <ul>
+                <li><a href="#">交通方式與樓層配置</a></li>
+                <li><a href="#">常見問答 (民眾權益專區)</a></li>
+                <li><a href="#">訴訟狀紙格式與範例下載</a></li>
+            </ul>
+        </div>
+    </aside>
+
+    <!-- 中央主內容區 -->
+    <main class="main-content">
+
+        <!-- 三款輪播橫幅 (Carousel) -->
+        <div class="banner-carousel-container" onmouseenter="pauseCarousel()" onmouseleave="startCarousel()">
+            
+            <!-- Slide 1: 機關焦點主題橫幅 -->
+            <div class="carousel-slide active">
+                <div class="banner-hero">
+                    <span class="hero-badge">ROLEPLAY 模擬司法機關</span>
+                    <h2 class="hero-title">臺灣臺南地方檢察署 線上服務專區</h2>
+                    <p class="hero-desc">提供案件庭期查詢、檢察長信箱陳情、訴訟狀紙範例下載等多項為民服務功能。</p>
+                    <div class="hero-buttons">
+                        <a href="#mailbox" class="hero-btn primary">檢察長信箱</a>
+                        <a href="#" class="hero-btn secondary">觀看機關簡介</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 2: 法規宣導警示橫幅 -->
+            <div class="carousel-slide">
+                <div class="banner-alert">
+                    <div class="banner-alert-tag">重點宣導</div>
+                    <div class="banner-alert-content">
+                        <h3>嚴懲妨害公務與暴力犯罪警示</h3>
+                        <p>凡持球棒、槍械等武器攻擊值勤員警者，本署一律嚴辦「加重妨害公務罪」，請勿以身試法。</p>
+                    </div>
+                    <a href="#" class="banner-alert-btn">查看法規細節</a>
+                </div>
+            </div>
+
+            <!-- Slide 3: 三欄式快捷服務橫幅 -->
+            <div class="carousel-slide">
+                <div class="banner-grid">
+                    <div class="grid-card card-blue">
+                        <div>
+                            <span class="card-subtitle">HEARING SCHEDULE</span>
+                            <h3 class="card-title">開庭進度查詢</h3>
+                            <p class="card-desc">即時掌握各偵查庭與庭期開庭動態及股別。</p>
+                        </div>
+                        <a href="schedule.html" target="_blank" class="card-btn">前往查詢 &rarr;</a>
+                    </div>
+                    <div class="grid-card card-green">
+                        <div>
+                            <span class="card-subtitle">LEGAL ADVICE</span>
+                            <h3 class="card-title">法律諮詢預約</h3>
+                            <p class="card-desc">線上預約法律諮詢服務與訴訟權利輔導。</p>
+                        </div>
+                        <a href="#" class="card-btn">線上預約 &rarr;</a>
+                    </div>
+                    <div class="grid-card card-red">
+                        <div>
+                            <span class="card-subtitle">REPORT CRIME</span>
+                            <h3 class="card-title">不法情事檢舉</h3>
+                            <p class="card-desc">具名或匿名檢舉伺服器內不法活動與違規行為。</p>
+                        </div>
+                        <a href="#" class="card-btn">立即檢舉 &rarr;</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 輪播指示點 -->
+            <div class="carousel-dots">
+                <span class="dot active" onclick="setSlide(0)"></span>
+                <span class="dot" onclick="setSlide(1)"></span>
+                <span class="dot" onclick="setSlide(2)"></span>
+            </div>
+        </div>
+
+        <!-- 檢察長信箱按鈕與 Formspree 表單 -->
+        <div class="mailbox-banner" id="mailbox">
+            <button class="mailbox-btn" onclick="toggleForm()">
+                檢察長信箱 Chief Prosecutor's Mailbox
+                <span>(遊戲RP專用，請勿填寫真實個人隱私或機敏資料)</span>
+            </button>
+            <p class="mailbox-desc">若您對本署各項檢察業務有任何建言或欲檢舉伺服器不法情事，請點擊上方按鈕展開表單提交。</p>
+            
+            <form id="mailbox-form" action="https://formspree.io/f/xyegwvvp" method="POST">
+                <label>陳情人遊戲暱稱：</label>
+                <input type="text" name="name" required placeholder="請輸入您的遊戲內稱呼">
+
+                <label>聯絡信箱 / Discord ID：</label>
+                <input type="text" name="contact" required placeholder="便於管理員回覆之聯繫方式">
+
+                <label>信件主旨：</label>
+                <input type="text" name="subject" required placeholder="例如：伺服器治安建言、違規檢舉">
+
+                <label>信件詳細內容：</label>
+                <textarea name="message" rows="5" required placeholder="請具體描述您的事項..."></textarea>
+
+                <button type="submit">確認送出陳情信件</button>
+                <button type="button" onclick="toggleForm()" style="background:#888; color:white; border:none; padding:10px 15px; margin-left:8px; border-radius:3px; cursor:pointer;">取消</button>
+            </form>
+        </div>
+
+        <!-- 最新消息區塊 -->
+        <div class="section-box">
+            <div class="section-header">
+                <span>最新消息 / 電子公佈欄</span>
+                <button class="admin-only-btn" style="display:none; font-size:12px; background:var(--primary-blue); color:white; border:none; padding:4px 10px; border-radius:3px; cursor:pointer;" onclick="openAddModal('latest')">＋ 新增公告</button>
+            </div>
+            <ul class="news-list" id="latest-news-list"></ul>
+        </div>
+
+        <!-- 業務與來文宣導 / 公告區塊 -->
+        <div class="section-box">
+            <div class="section-header">
+                <span>業務宣導與偵查終結公告專區</span>
+                <button class="admin-only-btn" style="display:none; font-size:12px; background:var(--primary-blue); color:white; border:none; padding:4px 10px; border-radius:3px; cursor:pointer;" onclick="openAddModal('notice')">＋ 新增公告</button>
+            </div>
+            <ul class="news-list" id="notice-news-list"></ul>
+        </div>
+    </main>
+</div>
+
+<!-- 後台管理 Modal -->
+<div class="modal" id="admin-modal">
+    <div class="modal-content">
+        <h2 id="modal-title">管理者登入</h2>
+        <div id="login-section">
+            <div class="form-group">
+                <label>請輸入管理密碼：</label>
+                <input type="password" id="admin-pwd" placeholder="預設密碼：admin123">
+            </div>
+            <div class="modal-actions">
+                <button onclick="closeAdminModal()">取消</button>
+                <button onclick="loginAdmin()" style="background:var(--primary-blue); color:white;">登入後台</button>
+            </div>
+        </div>
+        <div id="control-section" style="display:none;">
+            <p style="color:green; font-weight:bold;">已成功登入管理系統！您可以直接在網站各區塊點擊新增或刪除公告。</p>
+            <hr style="border:0; border-top:1px solid #ddd; margin:15px 0;">
+            <button onclick="resetDefaultData()" style="background:#d9381e; color:white; border:none; padding:8px 12px; border-radius:3px; cursor:pointer;">恢復預設內容</button>
+            <div class="modal-actions">
+                <button onclick="logoutAdmin()">登出</button>
+                <button onclick="closeAdminModal()" style="background:#ddd;">關閉視窗</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 新增公告 Modal -->
+<div class="modal" id="add-news-modal">
+    <div class="modal-content">
+        <h2>發布新公告</h2>
+        <div class="form-group">
+            <label>公告文字內容：</label>
+            <textarea id="new-item-text" rows="4" placeholder="請輸入公告內容..."></textarea>
+        </div>
+        <input type="hidden" id="new-item-type">
+        <div class="modal-actions">
+            <button onclick="closeAddModal()">取消</button>
+            <button onclick="saveNewItem()" style="background:var(--primary-blue); color:white;">確認發布</button>
+        </div>
+    </div>
+</div>
+
+<footer>
+    <p>機關地址：708203 臺南市安平區健康路三段310號 (遊戲模擬環境)<br>
+    ※ 聲明：本網站為遊戲角色扮演（Roleplay）專用模擬網站，架構參照真實臺灣臺南地方檢察署，無涉真實司法效力。<br>
+    政府網站資料開放宣告 │ 資訊安全政策 │ 隱私權保護宣告</p>
+</footer>
+
+<script>
+    /* --- 橫幅輪播邏輯 (Carousel) --- */
+    let currentSlide = 0;
+    let carouselTimer = null;
+
+    function showSlide(index) {
+        const slides = document.querySelectorAll('.carousel-slide');
+        const dots = document.querySelectorAll('.dot');
+        
+        if (index >= slides.length) currentSlide = 0;
+        else if (index < 0) currentSlide = slides.length - 1;
+        else currentSlide = index;
+
+        slides.forEach((slide, i) => {
+            slide.classList.remove('active');
+            if (i === currentSlide) slide.classList.add('active');
+        });
+
+        dots.forEach((dot, i) => {
+            dot.classList.remove('active');
+            if (i === currentSlide) dot.classList.add('active');
+        });
+    }
+
+    function setSlide(index) {
+        currentSlide = index;
+        showSlide(currentSlide);
+    }
+
+    function nextSlide() {
+        showSlide(currentSlide + 1);
+    }
+
+    function startCarousel() {
+        if (!carouselTimer) {
+            carouselTimer = setInterval(nextSlide, 5000);
+        }
+    }
+
+    function pauseCarousel() {
+        clearInterval(carouselTimer);
+        carouselTimer = null;
+    }
+
+    /* --- 預設資料與頁面初始化 --- */
+    const defaultLatest = [
+        "【法規更新】公務車輛竊盜條款已獨立規範，與一般車輛竊盜分離，請玩家注意適用差異。",
+        "【執法宣導】針對持球棒等武器攻擊值勤員警者，本署將嚴格以「加重妨害公務罪」追究。",
+        "【人事公告】本署各股檢察官與書記官值班表更新 (RP)"
+    ];
+    const defaultNotice = [
+        "本署偵查終結公告僅供遊戲內RP使用，無真實法律效力，目前無具體案件清單。",
+        "「被告進入法庭後訊問流程及相關權利」多國語言影音宣導已上線。"
+    ];
+
+    let isAdmin = false;
+
+    window.onload = function() {
+        renderData();
+        startCarousel();
+    };
+
+    function getLatest() { return JSON.parse(localStorage.getItem('tnc_latest')) || defaultLatest; }
+    function getNotice() { return JSON.parse(localStorage.getItem('tnc_notice')) || defaultNotice; }
+
+    function renderData() {
+        const latestList = document.getElementById('latest-news-list');
+        const noticeList = document.getElementById('notice-news-list');
+
+        const latestData = getLatest();
+        const noticeData = getNotice();
+
+        latestList.innerHTML = latestData.map((item, index) => `
+            <li>
+                <span class="news-item-text">${item}</span>
+                <span class="del-btn" style="display:${isAdmin ? 'inline' : 'none'}" onclick="deleteItem('latest', ${index})">刪除</span>
+            </li>
+        `).join('');
+
+        noticeList.innerHTML = noticeData.map((item, index) => `
+            <li>
+                <span class="news-item-text">${item}</span>
+                <span class="del-btn" style="display:${isAdmin ? 'inline' : 'none'}" onclick="deleteItem('notice', ${index})">刪除</span>
+            </li>
+        `).join('');
+
+        document.querySelectorAll('.admin-only-btn').forEach(btn => {
+            btn.style.display = isAdmin ? 'inline-block' : 'none';
+        });
+    }
+
+    /* --- 字體大小切換 --- */
+    function changeFontSize(size) {
+        const body = document.getElementById('body-layout');
+        if (size === 'small') body.style.fontSize = '13px';
+        if (size === 'normal') body.style.fontSize = '16px';
+        if (size === 'large') body.style.fontSize = '18px';
+    }
+
+    /* --- 管理員登入控制 --- */
+    function openAdminModal() { document.getElementById('admin-modal').style.display = 'flex'; }
+    function closeAdminModal() { document.getElementById('admin-modal').style.display = 'none'; }
+    
+    function loginAdmin() {
+        const pwd = document.getElementById('admin-pwd').value;
+        if (pwd === 'admin123') {
+            isAdmin = true;
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('control-section').style.display = 'block';
+            document.getElementById('modal-title').innerText = '後台控制台';
+            renderData();
+        } else {
+            alert('密碼錯誤！(預設密碼：admin123)');
+        }
+    }
+
+    function logoutAdmin() {
+        isAdmin = false;
+        document.getElementById('login-section').style.display = 'block';
+        document.getElementById('control-section').style.display = 'none';
+        document.getElementById('modal-title').innerText = '管理者登入';
+        document.getElementById('admin-pwd').value = '';
+        renderData();
+        closeAdminModal();
+    }
+
+    /* --- 公告管理 --- */
+    function openAddModal(type) {
+        document.getElementById('new-item-type').value = type;
+        document.getElementById('new-item-text').value = '';
+        document.getElementById('add-news-modal').style.display = 'flex';
+    }
+    function closeAddModal() { document.getElementById('add-news-modal').style.display = 'none'; }
+
+    function saveNewItem() {
+        const type = document.getElementById('new-item-type').value;
+        const text = document.getElementById('new-item-text').value.trim();
+        if (!text) { alert('請輸入內容'); return; }
+
+        if (type === 'latest') {
+            const list = getLatest();
+            list.unshift(text);
+            localStorage.setItem('tnc_latest', JSON.stringify(list));
+        } else {
+            const list = getNotice();
+            list.unshift(text);
+            localStorage.setItem('tnc_notice', JSON.stringify(list));
+        }
+        renderData();
+        closeAddModal();
+    }
+
+    function deleteItem(type, index) {
+        if (confirm('確定要刪除這筆公告嗎？')) {
+            if (type === 'latest') {
+                const list = getLatest();
+                list.splice(index, 1);
+                localStorage.setItem('tnc_latest', JSON.stringify(list));
+            } else {
+                const list = getNotice();
+                list.splice(index, 1);
+                localStorage.setItem('tnc_notice', JSON.stringify(list));
+            }
+            renderData();
+        }
+    }
+
+    function resetDefaultData() {
+        if (confirm('確定要重設所有自訂資料嗎？')) {
+            localStorage.removeItem('tnc_latest');
+            localStorage.removeItem('tnc_notice');
+            renderData();
+            alert('已恢復預設資料');
+        }
+    }
+
+    /* --- 檢察長信箱與 Formspree 送出 --- */
+    function toggleForm() {
+        const form = document.getElementById('mailbox-form');
+        form.style.display = (form.style.display === 'none' || form.style.display === '') ? 'block' : 'none';
+    }
+
+    const form = document.getElementById("mailbox-form");
+    form.addEventListener("submit", async function(event) {
+        event.preventDefault();
+        const data = new FormData(event.target);
+        
+        fetch(event.target.action, {
+            method: form.method,
+            body: data,
+            headers: { 'Accept': 'application/json' }
+        }).then(response => {
+            if (response.ok) {
+                alert("陳情信件已成功送出至管理端！");
+                form.reset();
+                form.style.display = 'none';
+            } else {
+                alert("送出失敗，請確認連線狀況。");
+            }
+        }).catch(() => {
+            alert("發生錯誤，無法送出表單。");
+        });
+    });
+</script>
+
+</body>
+</html>
